@@ -9,60 +9,74 @@ var postcss = require('gulp-postcss');
 var autoprefixer = require('autoprefixer');
 var cssnano = require('cssnano');
 var connect = require('gulp-connect');
+var webpackConfig = require('./webpack.config.js');
+var webpack = require("webpack");
 
-var devMode = process.env.NODE_ENV== 'development';
+
+var devMode = process.env.NODE_ENV == 'development';
 
 var folder = {
-    src:'src/',
-    dist:'dist/'
+    src: 'src/',
+    dist: 'dist/'
 }
 
-gulp.task('html',function(){
-    var page = gulp.src(folder.src + 'html/*')        
-    if(!devMode){
+gulp.task('html', function () {
+    var page = gulp.src(folder.src + 'html/*')
+    if (!devMode) {
         page = page.pipe(htmlclean())
-    }        
-        page.pipe(gulp.dest(folder.dist + 'html/')).pipe(connect.reload())
+    }
+    page.pipe(gulp.dest(folder.dist + 'html/')).pipe(connect.reload())
 })
 
-gulp.task('img',function(){
-    gulp.src(folder.src + 'img/*')        
+gulp.task('img', function () {
+    gulp.src(folder.src + 'img/*')
         .pipe(imagemin())
         .pipe(gulp.dest(folder.dist + 'img/')).pipe(connect.reload())
 })
 
-gulp.task('js',function(){
+gulp.task('js', function () {
     var page = gulp.src(folder.src + 'js/*')
-        if(!devMode){
-            page = page.pipe(strip())
-                .pipe(concat('index.js'))
-                .pipe(uglify())
-        }
-        page.pipe(gulp.dest(folder.dist + 'js/')).pipe(connect.reload())
+    if (!devMode) {
+        page = page.pipe(strip())
+            .pipe(concat('index.js'))
+            .pipe(uglify())
+    }
+    page.pipe(gulp.dest(folder.dist + 'js/')).pipe(connect.reload())
 })
 
-gulp.task('css',function(){
-    var options = [autoprefixer(),cssnano()];
+gulp.task('css', function () {
+    var options = [autoprefixer(), cssnano()];
     var page = gulp.src(folder.src + 'css/*')
         .pipe(less())
-    if(!devMode){        
-        page = page.pipe(postcss(options))  
-    }      
+    if (!devMode) {
+        page = page.pipe(postcss(options))
+    }
     page.pipe(gulp.dest(folder.dist + 'css/')).pipe(connect.reload())
 })
 
-gulp.task('watch',function(){
-    gulp.watch(folder.src + 'html/*',['html']);
-    gulp.watch(folder.src + 'css/*',['css']);
-    gulp.watch(folder.src + 'js/*',['js']);
-    gulp.watch(folder.src + 'img/*',['img']);
+gulp.task("webpack", function (callback) {
+    var myConfig = Object.create(webpackConfig);
+    webpack(myConfig, function (err, stats) {
+        callback();
+    });
+});
+
+gulp.task('watchVue', function () {
+    gulp.watch([folder.src + 'js/*'], ['webpack']);
+});
+
+gulp.task('watch', function () {
+    gulp.watch(folder.src + 'html/*', ['html']);
+    gulp.watch(folder.src + 'css/*', ['css']);
+    gulp.watch(folder.src + 'js/*', ['js']);
+    gulp.watch(folder.src + 'img/*', ['img']);
 })
 
-gulp.task('server',function(){
+gulp.task('server', function () {
     connect.server({
-        port:'8090',
-        livereload:true
+        port: '8090',
+        livereload: true
     });
 })
 
-gulp.task('default',['img','html','css','js','watch','server']);
+gulp.task('default', ['img', 'html', 'css', 'js', 'webpack','watch','watchVue', 'server']);
